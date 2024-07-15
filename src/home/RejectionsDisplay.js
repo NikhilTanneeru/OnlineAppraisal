@@ -13,14 +13,13 @@ const RejectionsDisplay = () => {
     </tr>
   );
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toISOString().split('T')[0]; // Extracts only the date part in "YYYY-MM-DD" format
-  };
-
   const fetchRequests = async () => {
     try {
-      const [hackathonsResponse, lecturesResponse, trainingsResponse, valAddCourseResponse, researchResponse, extraClassResponse, moocResponse] = await Promise.all([
+      const [workshopsResponse,hackathonsResponse, lecturesResponse, trainingsResponse, valAddCourseResponse, researchResponse, extraClassResponse, moocResponse] = await Promise.all([
+        axios.get('/get-rejected-workshops', {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        }),
+        
         axios.get('/get-rejected-hackathons', {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         }),
@@ -47,27 +46,30 @@ const RejectionsDisplay = () => {
       const userId = JSON.parse(localStorage.getItem('user'))._id;
 
       const combinedRequests = [
+        ...workshopsResponse.data
+          .filter((request) => request.userId === userId)
+          .map((request, index) => ({ ...request, type: 'Workshop', key: `Workshop-${request._id}` })),
         ...hackathonsResponse.data
           .filter((request) => request.userId === userId)
-          .map((request, index) => ({ ...request, type: 'Hackathon', index: index + 1 })),
+          .map((request, index) => ({ ...request, type: 'Hackathon', key: `Hackathon-${request._id}` })),
         ...lecturesResponse.data
           .filter((request) => request.userId === userId)
-          .map((request, index) => ({ ...request, type: 'Expert Lecture', index: index + 1 })),
+          .map((request, index) => ({ ...request, type: 'Expert Lecture', key: `ExpertLecture-${request._id}` })),
         ...trainingsResponse.data
           .filter((request) => request.userId === userId)
-          .map((request, index) => ({ ...request, type: 'Training', index: index + 1 })),
+          .map((request, index) => ({ ...request, type: 'Training', key: `Training-${request._id}` })),
         ...valAddCourseResponse.data
           .filter((request) => request.userId === userId)
-          .map((request, index) => ({ ...request, type: 'Value Added Course', index: index + 1 })),
+          .map((request, index) => ({ ...request, type: 'Value Added Course', key: `ValueAddedCourse-${request._id}` })),
         ...researchResponse.data
           .filter((request) => request.userId === userId)
-          .map((request, index) => ({ ...request, type: 'Research', index: index + 1 })),
+          .map((request, index) => ({ ...request, type: 'Research', key: `Research-${request._id}` })),
         ...extraClassResponse.data
           .filter((request) => request.userId === userId)
-          .map((request, index) => ({ ...request, type: 'Extra Class', index: index + 1 })),
+          .map((request, index) => ({ ...request, type: 'Extra Class', key: `ExtraClass-${request._id}` })),
         ...moocResponse.data
           .filter((request) => request.userId === userId)
-          .map((request, index) => ({ ...request, type: 'MOOC', index: index + 1 })),  
+          .map((request, index) => ({ ...request, type: 'MOOC', key: `MOOC-${request._id}` })),
       ];
 
       console.log('Combined Requests:', combinedRequests); // Log combined requests
@@ -77,8 +79,8 @@ const RejectionsDisplay = () => {
     }
   };
 
-  const handleViewDetails = (request) => {
-    setSelectedRequest(request);
+  const handleViewDetails = (requestKey) => {
+    setSelectedRequest(selectedRequest === requestKey ? null : requestKey);
   };
 
   const handleDelete = async (id, type) => {
@@ -138,20 +140,20 @@ const RejectionsDisplay = () => {
           <tbody>
             {requests.length > 0 ? (
               requests.map((request, index) => (
-                <React.Fragment key={request.index}>
+                <React.Fragment key={request.key}>
                   <tr>
-                    <td className="border px-4 py-2">{index+1}</td>
+                    <td className="border px-4 py-2">{index + 1}</td>
                     <td className="border px-4 py-2">{request.type}</td>
                     <td className="border px-4 py-2">{request.title}</td>
                     <td className="border px-4 py-2">
                       <button
                         className="bg-blue-500 text-white px-2 py-1 rounded"
-                        onClick={() => handleViewDetails(request)}
+                        onClick={() => handleViewDetails(request.key)}
                       >
-                        View
+                        {selectedRequest === request.key ? 'Hide' : 'View'}
                       </button>
                     </td>
-                    <td className="border px-4 py-2 text-red-500">{request.status}</td>
+                    <td className="border px-4 py-2 text-red-700">{request.status}</td>
                     <td className="border px-4 py-2">
                       <button
                         className="bg-red-500 text-white px-2 py-1 rounded"
@@ -161,45 +163,51 @@ const RejectionsDisplay = () => {
                       </button>
                     </td>
                   </tr>
-                  {selectedRequest && selectedRequest.index === request.index && (
+                  {selectedRequest === request.key && (
                     <tr>
                       <td colSpan="6" className="border px-4 py-2">
                         <h4 className="text-lg font-bold mb-2">Details:</h4>
                         <table className="w-full">
                           <tbody>
-                            {selectedRequest.type === 'Hackathon' && (
+                            {request.type === 'Hackathon' && (
                               <>
                                 <TableRow label="Rejection Reason" value={request.reason} />
-                                <TableRow label="Title" value={selectedRequest.title} />
-                                <TableRow label="Start Date" value={formatDate(selectedRequest.fromDate)} />
-                                <TableRow label="End Date" value={formatDate(selectedRequest.toDate)} />
-                                <TableRow label="Coordinator Name" value={selectedRequest.cordName === '' ? 'No Coordinator Involved' : selectedRequest.cordName} />
-                                <TableRow label="Coordinator Id" value={(!selectedRequest.cordId) ? 'No Coordinator Involved' : selectedRequest.cordId} />
+                                <TableRow label="Title" value={request.title} />
+                                <TableRow label="Start Date" value={selectedRequest.fromDate} />
+                                <TableRow label="End Date" value={request.toDate} />
+                                <TableRow label="Coordinator Name" value={request.cordName === '' ? 'No Coordinator Involved' : request.cordName} />
+                                <TableRow label="Coordinator Id" value={(!request.cordId) ? 'No Coordinator Involved' : request.cordId} />
                               </>
                             )}
-                            {selectedRequest.type === 'Expert Lecture' && (
+                            {request.type === 'Expert Lecture' && (
                               <>
-                                <TableRow label="Title" value={selectedRequest.title} />
-                                <TableRow label="Instructor" value={selectedRequest.instructor} />
-                                <TableRow label="Coordinator Name" value={selectedRequest.cordName === '' ? 'No Coordinator Involved' : selectedRequest.cordName} />
-                                <TableRow label="Coordinator Id" value={(!selectedRequest.cordId) ? 'No Coordinator Involved' : selectedRequest.cordId} />
+                                <TableRow label="Title" value={request.title} />
+                                <TableRow label="Instructor" value={request.instructor} />
+                                <TableRow label="Coordinator Name" value={request.cordName === '' ? 'No Coordinator Involved' : request.cordName} />
+                                <TableRow label="Coordinator Id" value={(!request.cordId) ? 'No Coordinator Involved' : request.cordId} />
                               </>
                             )}
-                            {selectedRequest.type === 'Training' && (
+                            {request.type === 'Training' && (
                               <>
-                                <TableRow label="Title" value={selectedRequest.title} />
-                                <TableRow label="From Date" value={selectedRequest.fromDate} />
-                                <TableRow label="To Date" value={selectedRequest.toDate} />
-                                <TableRow label="Duration" value={selectedRequest.duration} />
-                                <TableRow label="Number of Days" value={selectedRequest.noOfDays} />
-                                <TableRow label="Topic" value={selectedRequest.topic} />
+                                <TableRow label="Title" value={request.title} />
+                                <TableRow label="From Date" value={request.fromDate} />
+                                <TableRow label="To Date" value={request.toDate} />
+                                <TableRow label="Duration" value={request.duration} />
+                                <TableRow label="Number of Days" value={request.noOfDays} />
+                                <TableRow label="Topic" value={request.topic} />
                               </>
                             )}
-                            {selectedRequest.type === 'Value Added Course' && (
+                            {request.type === 'Value Added Course' && (
                               <>
-                                <TableRow label="Course Name" value={selectedRequest.courseName} />
-                                <TableRow label="Credits" value={selectedRequest.credits} />
-                                <TableRow label="Description" value={selectedRequest.description} />
+                                <TableRow label="Course Name" value={request.courseName} />
+                                <TableRow label="Credits" value={request.credits} />
+                                <TableRow label="Description" value={request.description} />
+                              </>
+                            )}
+                            {request.type === 'MOOC' && (
+                              <>
+                                 <TableRow label="Coordinator Name" value={(!request.cordName)? 'No Coordinator Involved' : request.cordName} />
+                                 <TableRow label="Coordinator Id" value={(!request.cordId) ? 'No Coordinator Involved' : request.cordId} />
                               </>
                             )}
                           </tbody>

@@ -5,6 +5,7 @@ import Login from './landingpage/Login';
 import Signup from './landingpage/Signup';
 import Review from './landingpage/Review';
 import PasswordPage from './landingpage/CreatePassword';
+import UpdatePassword from './landingpage/UpdatePassword';
 import ProfilePage from './home/Profile';
 import Layout from './home/Layout';
 import Homepage from './home/Homepage';
@@ -18,6 +19,7 @@ import PointDisplay from './home/PointDisplay';
 import RequestsDisplay from './home/RequestsDisplay';
 import Submissions from './home/Submissions'
 
+
 function App() {
   return (
     <UserProvider>
@@ -28,6 +30,7 @@ function App() {
             <Route path="/signup" element={<Signup />} />
             <Route path="/review" element={<Review />} />
             <Route path="/createpassword" element={<PasswordPage />} />
+            <Route path="/updatepassword" element={<ProtectedRoute><UpdatePassword /></ProtectedRoute>} />
             <Route path="/forgotpassword" element={<ForgotPassword/>} />
             <Route path="/home" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route path="" element={<ProfilePage />} />

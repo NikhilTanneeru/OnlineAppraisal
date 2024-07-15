@@ -1,6 +1,8 @@
 import React, { useState, useContext, useRef, useEffect } from 'react';
 import UserContext from '../../UserContext';
 import Swal from 'sweetalert2';
+import axios from 'axios';
+
 
 function Workshop() {
   const { user } = useContext(UserContext); // Get user from context
@@ -11,6 +13,31 @@ function Workshop() {
   const fileInputRef = useRef(null); // Ref for the file input
   const posterInputRef = useRef(null); // Ref for the poster input
   const [workshopCount, setWorkshopCount] = useState(0); // State to hold the number of workshops
+  const [title, setTitle] = useState('');
+
+  
+  const [hasCoordinator, setHasCoordinator] = useState(false);
+  const [coordinatorId, setCoordinatorId] = useState('');
+  const [coordinatorName, setCoordinatorName] = useState('');
+
+  const handleCoordinatorChange = async (e) => {
+    setCoordinatorId(e.target.value);
+    if (e.target.value) {
+      try {
+        const response = await axios.get(`/get-employee-name/${e.target.value}`);
+        if (response.status === 200) {
+          setCoordinatorName(response.data.name);
+        } else {
+          setCoordinatorName('');
+        }
+      } catch (error) {
+        console.error('Error fetching coordinator name:', error);
+        setCoordinatorName('');
+      }
+    } else {
+      setCoordinatorName('');
+    }
+  };
 
   useEffect(() => {
     // Fetch the number of workshops conducted
@@ -54,6 +81,11 @@ function Workshop() {
     setFiles([]);
     setDuration('');
     setPoster(null);
+    setTitle('')
+
+    setHasCoordinator(false);
+    setCoordinatorId('');
+    setCoordinatorName('');
 
     // Clear file input fields
     if (fileInputRef.current) {
@@ -77,11 +109,14 @@ function Workshop() {
         Array.from(files).forEach((file) => {
           formData.append('files', file); // Use 'files' as the field name
         });
+        formData.append('title', title);
         formData.append('duration', duration);
         if (poster) {
           formData.append('poster', poster); // Add the poster file
         }
-
+        formData.append('hasCoordinator', hasCoordinator); // Convert boolean to string
+        formData.append('coordinatorId', coordinatorId);
+  
         try {
           const response = await fetch('/upload-workshop-files', {
             method: 'POST',
@@ -90,16 +125,16 @@ function Workshop() {
               Authorization: `Bearer ${localStorage.getItem('token')}`,
             },
           });
-
+  
           if (!response.ok) {
             const errorText = await response.text();
             throw new Error(errorText);
           }
-
+  
           const data = await response.json();
           console.log(data);
-          Swal.fire('Saved!', '', 'success');
-
+          Swal.fire('Request Sent to Dean!', '', 'success');
+  
           clearFile();
         } catch (error) {
           console.error('Error uploading files:', error.message);
@@ -110,6 +145,7 @@ function Workshop() {
       }
     });
   };
+  
 
   if (!user) {
     return <div className="text-gray-500">You are not logged in</div>;
@@ -136,15 +172,28 @@ function Workshop() {
 
       {isConducted && (
         <div className="mt-4">
+          <label className="block w-full mb-2">Workshop Conducted On:</label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="w-full p-2 pl-10 text-sm text-gray-700"
+            style={{
+              maxWidth: '70%',
+              padding: '0.5rem',
+              borderRadius: '0.5rem',
+              border: '1px solid #ccc',
+            }}
+          />
           <div className="text-sm font-bold mb-2">Duration:</div>
           <div className="flex flex-col gap-2">
             <label className="flex items-center gap-2">
               <input
                 type="radio"
                 name="duration"
-                value="D-1"
+                value="1"
                 onChange={handleDurationChange}
-                checked={duration === 'D-1'}
+                checked={duration === '1'}
                 className="form-radio text-blue-600"
               />
               1 Day
@@ -153,9 +202,9 @@ function Workshop() {
               <input
                 type="radio"
                 name="duration"
-                value="D-2"
+                value="2"
                 onChange={handleDurationChange}
-                checked={duration === 'D-2'}
+                checked={duration === '2'}
                 className="form-radio text-blue-600"
               />
               2 Day
@@ -164,9 +213,9 @@ function Workshop() {
               <input
                 type="radio"
                 name="duration"
-                value="D-5"
+                value="5"
                 onChange={handleDurationChange}
-                checked={duration === 'D-5'}
+                checked={duration === '5'}
                 className="form-radio text-blue-600"
               />
               5 Day
@@ -195,7 +244,44 @@ function Workshop() {
             />
           </div>
           <div className="flex justify-left items-center mt-4 gap-9">
-            <button className="bg-green-400 text-sm uppercase font-semibold rounded-full px-2 py-1" onClick={handleUpload}>
+              <label className="text-sm font-bold">Is there a coordinator?</label>
+              <input
+                type="radio"
+                checked={hasCoordinator}
+                onChange={() => setHasCoordinator(true)}
+              />
+              <label className="text-sm font-bold">Yes</label>
+              <input
+                type="radio"
+                checked={!hasCoordinator}
+                onChange={() => setHasCoordinator(false)}
+              />
+              <label className="text-sm font-bold">No</label>
+          </div>
+            {hasCoordinator && (
+              <div className="flex flex-col justify-left pl-10 mt-4">
+                <label className="block w-full mb-2">Coordinator Employee ID:</label>
+                <input
+                  type="text"
+                  value={coordinatorId}
+                  onChange={handleCoordinatorChange}
+                  className="w-full p-2 pl-10 text-sm text-gray-700"
+                  style={{
+                    maxWidth: '70%',
+                    padding: '0.5rem',
+                    borderRadius: '0.5rem',
+                    border: '1px solid #ccc',
+                  }}
+                />
+                {coordinatorName && (
+                  <div className="mt-2">
+                    <strong>Coordinator Name:</strong> {coordinatorName}
+                  </div>
+                )}
+              </div>
+            )}
+          <div className="flex justify-left items-center mt-4 gap-9">
+            <button className="bg-green-400 text-sm uppercase font-semibold roundefull px-2 py-1" onClick={handleUpload}>
               Upload
             </button>
           </div>

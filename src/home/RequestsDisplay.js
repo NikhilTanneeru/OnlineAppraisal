@@ -438,9 +438,11 @@ const RequestsDisplay = () => {
 
   const fetchRequests = async () => {
     try {
-      const [hackathonsResponse, lecturesResponse, trainingsResponse, valAddCourseResponse, 
-        researchResponse, extraClassResponse, moocResponse, publicationResponse, industrialVisitResponse] = await Promise.all([
-
+      const [workshopsResponse, hackathonsResponse, lecturesResponse, trainingsResponse, valAddCourseResponse, researchResponse, extraClassResponse, moocResponse, publicationResponse, industrialVisitResponse] = await Promise.all([
+        axios.get('/get-pending-workshops', {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        }),
+        
         axios.get('/get-pending-hackathons', {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         }),
@@ -471,6 +473,7 @@ const RequestsDisplay = () => {
       ]);
 
       const combinedRequests = [
+        ...workshopsResponse.data.map((request) => ({ ...request, type: 'Workshop' })),
         ...hackathonsResponse.data.map((request) => ({ ...request, type: 'Hackathon' })),
         ...lecturesResponse.data.map((request) => ({ ...request, type: 'Expert Lecture' })),
         ...trainingsResponse.data.map((request) => ({ ...request, type: 'Training' })),
@@ -567,9 +570,19 @@ const RequestsDisplay = () => {
   const handleViewPoster = () => {
     if (selectedRequest && selectedRequest.poster) {
       const posterUrl = `/uploads/${encodeURIComponent(selectedRequest.poster.filename)}`;
-      window.open(posterUrl);
+      console.log('Opening URL:', posterUrl); // Log the URL to verify
+      
+      const newWindow = window.open(posterUrl, '_blank');
+      if (!newWindow) {
+        console.error('Failed to open new window. Check if pop-ups are blocked.');
+      } else {
+        newWindow.focus();
+      }
+    } else {
+      console.error('No selected request or poster found.');
     }
   };
+  
 
   const handleViewReport = () => {
     if (selectedRequest && selectedRequest.report) {

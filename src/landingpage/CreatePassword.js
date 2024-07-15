@@ -76,6 +76,83 @@
 // export default CreatePassword;
 
 
+// import React, { useState } from 'react';
+// import { useLocation, useNavigate } from 'react-router-dom';
+// import axios from 'axios';
+// import Swal from 'sweetalert2';
+
+// const CreatePassword = () => {
+//     const navigate = useNavigate();
+//     const location = useLocation();
+//     const email = location.state?.email;
+
+//     const [passwordData, setPasswordData] = useState({
+//         password: '',
+//         confirmPassword: ''
+//     });
+
+//     const handleChange = (e) => {
+//         const { name, value } = e.target;
+//         setPasswordData({ ...passwordData, [name]: value });
+//     };
+
+//     const handleSubmit = async (e) => {
+//         e.preventDefault();
+
+//         if (passwordData.password !== passwordData.confirmPassword) {
+//             Swal.fire({
+//                 icon: 'error',
+//                 title: 'Error',
+//                 text: 'Passwords do not match',
+//             });
+//             return;
+//         }
+
+//         try {
+//             const response = await axios.post('http://localhost:5000/create-password', { email, password: passwordData.password });
+//             console.log(response);
+
+//             Swal.fire({
+//                 icon: 'success',
+//                 title: 'Success',
+//                 text: 'Password created successfully!\nRedirecting to Login Page',
+//             }).then(() => {
+//                 navigate('/');
+//             });
+
+//         } catch (error) {
+//             console.error(error);
+//             Swal.fire({
+//                 icon: 'error',
+//                 title: 'Error',
+//                 text: 'Failed to create password',
+//             });
+//         }
+//     };
+
+//     return (
+//         <div className="container" id='box1'>
+//             <center><h2 id="heading">Create your Password</h2></center>
+//             <hr /><br />
+//             <form id="signupForm" onSubmit={handleSubmit} className="space-y-4">
+//                 <div>
+//                     <label htmlFor="password" className="block mb-2 w-full">Enter New Password:</label>
+//                     <input type="password" id="password" name="password" value={passwordData.password} onChange={handleChange} className="w-full p-2 border border-black" required />
+//                 </div>
+
+//                 <div>
+//                     <label htmlFor="confirmPassword" className="block mb-2">Confirm Password:</label>
+//                     <input type="password" id="confirmPassword" name="confirmPassword" value={passwordData.confirmPassword} onChange={handleChange} className="w-full p-2 border border-black" required />
+//                 </div>
+
+//                 <center><button type="submit" className="bg-green-500 text-white px-4 py-2 rounded">Submit</button></center>
+//             </form>
+//         </div>
+//     );
+// };
+
+// export default CreatePassword;
+
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -115,7 +192,7 @@ const CreatePassword = () => {
             Swal.fire({
                 icon: 'success',
                 title: 'Success',
-                text: 'Password created successfully!\nRedirecting to Login Page',
+                text: 'Password changed successfully!\nRedirecting to Login Page',
             }).then(() => {
                 navigate('/');
             });
@@ -131,22 +208,41 @@ const CreatePassword = () => {
     };
 
     return (
-        <div className="container" id='box1'>
-            <center><h2 id="heading">Create your Password</h2></center>
-            <hr /><br />
-            <form id="signupForm" onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                    <label htmlFor="password" className="block mb-2 w-full">Enter New Password:</label>
-                    <input type="password" id="password" name="password" value={passwordData.password} onChange={handleChange} className="w-full p-2 border border-black" required />
-                </div>
+        <div className="flex items-center justify-center min-h-screen bg-gray-100">
+            <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+                <h2 className="text-2xl font-bold mb-6 text-center">Create your Password</h2>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <div>
+                        <label htmlFor="password" className="block mb-2 text-sm font-medium text-gray-700">Enter New Password:</label>
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password" 
+                            value={passwordData.password} 
+                            onChange={handleChange} 
+                            className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" 
+                            required 
+                        />
+                    </div>
 
-                <div>
-                    <label htmlFor="confirmPassword" className="block mb-2">Confirm Password:</label>
-                    <input type="password" id="confirmPassword" name="confirmPassword" value={passwordData.confirmPassword} onChange={handleChange} className="w-full p-2 border border-black" required />
-                </div>
+                    <div>
+                        <label htmlFor="confirmPassword" className="block mb-2 text-sm font-medium text-gray-700">Confirm Password:</label>
+                        <input 
+                            type="password" 
+                            id="confirmPassword" 
+                            name="confirmPassword" 
+                            value={passwordData.confirmPassword} 
+                            onChange={handleChange} 
+                            className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" 
+                            required 
+                        />
+                    </div>
 
-                <center><button type="submit" className="bg-green-500 text-white px-4 py-2 rounded">Submit</button></center>
-            </form>
+                    <div className="text-center">
+                        <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition">Submit</button>
+                    </div>
+                </form>
+            </div>
         </div>
     );
 };

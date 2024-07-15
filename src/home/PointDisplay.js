@@ -5,7 +5,7 @@ import Submissions from '../home/Submissions';
 import RejectionsDisplay from './RejectionsDisplay';
 
 function PointDisplay() {
-  const { user } = useContext(UserContext); // Get user from context
+  const { user } = useContext(UserContext); 
   const [totalPoints, setTotalPoints] = useState(0);
   const [pointsLog, setPointsLog] = useState([]);
 

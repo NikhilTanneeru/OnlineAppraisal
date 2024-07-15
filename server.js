@@ -9,6 +9,7 @@ require('dotenv').config();
 const multer = require('multer');
 
 const app = express();
+require('firebase/auth');
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -26,9 +27,18 @@ const fileSchema = new Schema({
 });
 
 const workshopSchema = new Schema({
+  conducted: String,
+  title: String,
   duration: String,
   files: [fileSchema], // Array of fileSchema for multiple files
-  poster: fileSchema // Single fileSchema for the poster
+  poster: fileSchema, // Single fileSchema for the poster
+  status: {
+    type: String,
+    default: "Pending"
+  },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  empId:String,
+  empName:String
 });
 
 const scholarSchema = new Schema({
@@ -270,10 +280,17 @@ const upload = multer({
 
 // File filters
 const workshopFileFilter = (req, file, cb) => {
-  if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/jpg') {
+  const allowedMimeTypes = [
+    'application/pdf',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'image/jpeg',
+    'image/jpg'
+  ];
+
+  if (allowedMimeTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Only JPEG files are allowed for workshops'), false);
+    cb(new Error('Only PDF, DOCX, JPEG, and JPG files are allowed'), false);
   }
 };
 
@@ -336,6 +353,51 @@ const authenticateToken = (req, res, next) => {
     next();
   });
 };
+
+app.post('/api/getUserByMobile', async (req, res) => {
+  const { employeeId } = req.body;
+  try {
+    const user = await User.findOne({ employeeId });
+    // console.log('User:', user); // Log user information
+
+    if (user) {
+      res.json({ mobileNumber: user.personalNumber });
+    } else {
+      res.status(404).json({ error: 'User not found' });
+    }
+  } catch (error) {
+    console.error('Error:', error); // Log error details
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+app.post('/update-password', async (req, res) => {
+  const { employeeID, password } = req.body;
+
+  if (!employeeID || !password) {
+      return res.status(400).send({ message: 'Employee ID and password are required' });
+  }
+
+  try {
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
+
+      const user = await User.findOneAndUpdate(
+          { employeeId: employeeID }, // Use employeeID to find the user
+          { password: hashedPassword },
+          { new: true }
+      );
+
+      if (!user) {
+          return res.status(404).send({ message: 'User not found' });
+      }
+
+      res.send({ message: 'Password updated successfully', user });
+  } catch (error) {
+      console.error('Error updating password:', error);
+      res.status(500).send({ message: 'Internal server error' });
+  }
+});
 
 
 // ----------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -540,14 +602,21 @@ app.post('/upload-workshop-files', authenticateToken, uploadWorkshopFiles.fields
   const userId = req.user.id;
   const files = req.files.files || [];
   const poster = req.files.poster ? req.files.poster[0] : null;
-  const { duration } = req.body;
+  const {title, duration, hasCoordinator, coordinatorId } = req.body;
 
   try {
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).send({ message: 'User not found' });
     }
-
+    let coordinator = null;
+    if (hasCoordinator && coordinatorId) {
+      coordinator = await User.findOne({ employeeId: coordinatorId });
+      if (!coordinator) {
+        return res.status(404).send({ message: 'Coordinator not found' });
+      }
+    }
+    
     const workshopFiles = files.map((file) => ({
       filename: file.originalname,
       filepath: file.path
@@ -559,15 +628,28 @@ app.post('/upload-workshop-files', authenticateToken, uploadWorkshopFiles.fields
     } : null;
 
     const newWorkshop = {
+      conducted:'Workshop',
+      title,
       duration,
       files: workshopFiles,
-      poster: workshopPoster
+      poster: workshopPoster,
+      coordinatorId: coordinator ? coordinator._id : null,
+      userId: user._id,
+      status: 'Pending',
+      empId: user.employeeId,
+      empName: user.firstName+' '+user.lastName,
+      cordName: coordinator ? `${coordinator.firstName} ${coordinator.lastName}` : '',
+      coordId: coordinator ? coordinator.employeeId : ''
     };
+
+    if (!Array.isArray(user.workshops)) {
+      user.workshops = [];
+    }
 
     user.workshops.push(newWorkshop);
 
     await user.save();
-    res.send({ message: 'Files uploaded successfully' });
+    res.send({ message: 'Files uploaded successfully' , workshopId: newWorkshop._id});
   } catch (error) {
     console.error(error);
     res.status(500).send({ message: 'Error uploading files' });
@@ -608,6 +690,7 @@ app.post('/upload-research-details', authenticateToken, uploadResearchFiles.sing
     }
 
     const newResearch = {
+      conducted:'Research',
       title,
       startDate,
       expectedEndDate,
@@ -616,12 +699,16 @@ app.post('/upload-research-details', authenticateToken, uploadResearchFiles.sing
         filename: reportFile.originalname,
         filepath: reportFile.path,
       },
+      status: 'Pending',
+      userId: user._id,
+      empId: user.employeeId,
+      empName: user.firstName+' '+user.lastName
     };
 
     user.researches.push(newResearch);
 
     await user.save();
-    res.send({ message: 'Research details uploaded successfully' });
+    res.send({ message: 'Research details uploaded successfully'  , researchid: newResearch._id});
   } catch (error) {
     console.error(error);
     res.status(500).send({ message: 'Error uploading research details' });
@@ -1234,6 +1321,7 @@ const getPendingActivities = async (req, res, activityType, userField) => {
 };
 
 // Specific get routes
+app.get('/get-pending-workshops', authenticateToken, (req, res) => getPendingActivities(req, res, 'Workshops', 'workshops'));
 app.get('/get-pending-hackathons', authenticateToken, (req, res) => getPendingActivities(req, res, 'Hackathons', 'hackathons'));
 app.get('/get-pending-valAddCourses', authenticateToken, (req, res) => getPendingActivities(req, res, 'Value Added Courses', 'valAddCourses'));
 app.get('/get-pending-expert-lectures', authenticateToken, (req, res) => getPendingActivities(req, res, 'Expert Lectures', 'expertLectures'));
@@ -1268,6 +1356,7 @@ const getRejectedActivities = async (req, res, activityType, userField) => {
 };
 
 // Specific get routes for rejected activities
+app.get('/get-rejected-workshops', authenticateToken, (req, res) => getRejectedActivities(req, res, 'Workshops', 'workshops'));
 app.get('/get-rejected-hackathons', authenticateToken, (req, res) => getRejectedActivities(req, res, 'Hackathons', 'hackathons'));
 app.get('/get-rejected-valAddCourses', authenticateToken, (req, res) => getRejectedActivities(req, res, 'Value Added Courses', 'valAddCourses'));
 app.get('/get-rejected-expert-lectures', authenticateToken, (req, res) => getRejectedActivities(req, res, 'Expert Lectures', 'expertLectures'));
@@ -1363,8 +1452,8 @@ const approveActivity = async (req, res, activityType, userField) => {
     }
 
     activity.status = 'Approved';
-    const points = activity.coordinatorId ? 1 : 2;
-    points=(activity.conducted==='MOOC') && (activity.coordinatorId)?3:6;
+    var points = activity.coordinatorId ? 1 : 2;
+    points=(activity.conducted==='MOOC' || activity.conducted==='Workshop') && (activity.coordinatorId)?3:6;
     user.totalPoints += points;
     user.pointsLog.push({
       activityType,
@@ -1394,7 +1483,13 @@ const approveActivity = async (req, res, activityType, userField) => {
     res.status(500).send({ message: `Error approving ${activityType}` });
   }
 };
-                      
+       
+
+// Approve Workshop
+app.post('/approve-workshop/:id', authenticateToken, async (req, res) => {
+  approveActivity(req, res, 'Workshop', 'workshops');
+});
+
 // Approve hackathon route
 app.post('/approve-hackathon/:id', authenticateToken, async (req, res) => {
   approveActivity(req, res, 'Hackathon', 'hackathons');
@@ -1507,6 +1602,7 @@ app.post('/approve-value-added-course/:id', authenticateToken, async (req, res) 
     res.status(500).send({ message: 'Error Approving Value Added Course' });
   }
 });
+
 
 // Approve research route
 app.post('/approve-research/:id', authenticateToken, async (req, res) => {
@@ -1721,6 +1817,7 @@ const deleteActivity = async (req, res, activityType, userField) => {
 };
 
 // Specific delete routes
+app.delete('/delete-workshop/:id', authenticateToken, (req, res) => deleteActivity(req, res, 'Workshop', 'workshops'));
 app.delete('/delete-hackathon/:id', authenticateToken, (req, res) => deleteActivity(req, res, 'Hackathon', 'hackathons'));
 app.delete('/delete-expert-lecture/:id', authenticateToken, (req, res) => deleteActivity(req, res, 'Expert Lecture', 'expertLectures'));
 app.delete('/delete-training/:id', authenticateToken, (req, res) => deleteActivity(req, res, 'Training', 'trainings'));
@@ -1789,6 +1886,7 @@ const rejectActivity = async (req, res, activityType, userField) => {
   }
 };
 
+app.post('/reject-workshop/:id', authenticateToken, (req, res) => rejectActivity(req, res, 'Workshop', 'workshops'));
 app.post('/reject-hackathon/:id', authenticateToken, (req, res) => rejectActivity(req, res, 'Hackathon', 'hackathons'));
 app.post('/reject-expert-lecture/:id', authenticateToken, (req, res) => rejectActivity(req, res, 'Expert Lecture', 'expertLectures'));
 app.post('/reject-training/:id', authenticateToken, (req, res) => rejectActivity(req, res, 'Training', 'trainings'));

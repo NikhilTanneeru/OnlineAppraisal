@@ -74,7 +74,7 @@ function Hackathon() {
       Swal.fire('Error', 'Please fill in all required fields.', 'error');
       return;
     }
-
+    
     Swal.fire({
       title: "Do you want to save the changes?",
       showDenyButton: true,
@@ -237,7 +237,7 @@ function Hackathon() {
                 onChange={() => setHasCoordinator(false)}
               />
               <label className="text-sm font-bold">No</label>
-            </div>
+          </div>
             {hasCoordinator && (
               <div className="flex flex-col justify-left pl-10 mt-4">
                 <label className="block w-full mb-2">Coordinator Employee ID:</label>
