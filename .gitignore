@@ -22,4 +22,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-/firebase
+# Firebase setup file
+src/firebase/setup.js
+
+# Environment variables
+.env
