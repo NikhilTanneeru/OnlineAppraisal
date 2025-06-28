@@ -2,6 +2,11 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 
+const formatDate = (dateString) => {
+  const date = new Date(dateString);
+  return date
+};
+
 const Submissions = () => {
   const [requests, setRequests] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
@@ -13,10 +18,6 @@ const Submissions = () => {
     </tr>
   );
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date
-  };
 
   const fetchRequests = async () => {
     try {
@@ -243,13 +244,16 @@ const Submissions = () => {
                             <>
                               <TableRow label="Workshop On" value={request.title} />
                               <TableRow label="Duration" value={request.duration} />
+                              <TableRow label="From Date" value={new Date(request.fromDate).toLocaleDateString()} />
+                              <TableRow label="To Date" value={new Date(request.toDate).toLocaleDateString()} />
                               <TableRow label="Coordinator Name" value={(!request.cordName) ? 'No Coordinator Involved' : request.cordName} />
-                              <TableRow label="Coordinator Id" value={(!request.cordId) ? 'No Coordinator Involved' : request.cordId} />
+                              <TableRow label="Coordinator Id" value={(!request.coordId) ? 'No Coordinator Involved' : request.coordId} />
                             
                             </>
                           )}
                           {request.type === 'MOOC' && (
                             <>
+                              <TableRow label="MOOC Title" value={request.title} />
                               <TableRow label="Coordinator Name" value={(!request.cordName) ? 'No Coordinator Involved' : request.cordName} />
                               <TableRow label="Coordinator Id" value={(!request.cordId) ? 'No Coordinator Involved' : request.cordId} />
                             </>

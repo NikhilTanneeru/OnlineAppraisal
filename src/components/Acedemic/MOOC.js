@@ -7,6 +7,7 @@ function MOOC() {
   const [isChecked, setIsChecked] = useState(true);
   const detailsInput = useRef(null); // Ref for details file input
   const [details, setDetails] = useState(null);
+  const [title, setTitle] = useState('');
   const [hasCoordinator, setHasCoordinator] = useState(false);
   const [coordinatorId, setCoordinatorId] = useState('');
   const [coordinatorName, setCoordinatorName] = useState('');
@@ -69,6 +70,7 @@ function MOOC() {
 
         const formData = new FormData();
         formData.append('checked', isChecked);
+        formData.append('title', title);
         formData.append('hasCoordinator', hasCoordinator);
         formData.append('coordinatorId', coordinatorId);
         if (details) formData.append('details', details);
@@ -115,10 +117,23 @@ function MOOC() {
       {isChecked && (
         <div className="pl-10 mt-4">
           <div className="flex flex-col mb-4">
+            <label className="block w-full mb-2">MOOC Title:</label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full p-2 pl-10 text-sm text-gray-700 mb-3"
+              style={{
+                maxWidth: '70%',
+                padding: '0.5rem',
+                borderRadius: '0.5rem',
+                border: '1px solid #ccc',
+              }}
+            />
             <label className="text-sm font-bold mb-2">Upload Lecture Details</label>
             <input
               ref={detailsInput}
-              className="text-sm font-semibold"
+              className="text-sm font-semibold my-2"
               type="file"
               onChange={(e) => handleFileChange(e, setDetails)}
             />

@@ -14,6 +14,8 @@ function Workshop() {
   const posterInputRef = useRef(null); // Ref for the poster input
   const [workshopCount, setWorkshopCount] = useState(0); // State to hold the number of workshops
   const [title, setTitle] = useState('');
+  const [fromDate, setDate] = useState('');
+  const [toDate, setEndDate] = useState('');
 
   
   const [hasCoordinator, setHasCoordinator] = useState(false);
@@ -116,6 +118,8 @@ function Workshop() {
         }
         formData.append('hasCoordinator', hasCoordinator); // Convert boolean to string
         formData.append('coordinatorId', coordinatorId);
+        formData.append('fromDate', fromDate);
+        formData.append('toDate', toDate);
   
         try {
           const response = await fetch('/upload-workshop-files', {
@@ -163,7 +167,7 @@ function Workshop() {
           <span className="text-sm font-semibold">Is Workshop Conducted?</span>
           <input
             type="checkbox"
-            className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+            className="w-5 h-5 text-blue-600 bg-gray-100 rounded focus:ring-blue-500 focus:ring-2"
             checked={isConducted}
             onChange={(e) => setIsConducted(e.target.checked)}
           />
@@ -220,6 +224,33 @@ function Workshop() {
               />
               5 Day
             </label>
+            <label className="block w-full mb-2">Workshop Started Date:</label>
+          <input
+            type="date"
+            value={fromDate}
+            onChange={(e) => setDate(e.target.value)}
+            className="w-full p-2 pl-10 text-sm text-gray-700"
+            style={{
+              maxWidth: '70%',
+              padding: '0.5rem',
+              borderRadius: '0.5rem',
+              border: '1px solid #ccc',
+            }}
+          />
+
+          <label className="block w-full mb-2">Workshop Ended Date:</label>
+          <input
+            type="date"
+            value={toDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="w-full p-2 pl-10 text-sm text-gray-700"
+            style={{
+              maxWidth: '70%',
+              padding: '0.5rem',
+              borderRadius: '0.5rem',
+              border: '1px solid #ccc',
+            }}
+          />
           </div>
 
           <div className="mt-4">

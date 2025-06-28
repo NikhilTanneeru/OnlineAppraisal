@@ -85,8 +85,8 @@ function Hackathon() {
       if (result.isConfirmed) {
         const formData = new FormData();
         formData.append('conducted', isConducted);
-        formData.append('startDate', fromDate);
-        formData.append('endDate', toDate);
+        formData.append('fromDate', fromDate);
+        formData.append('toDate', toDate);
         formData.append('fromTime', fromTime);
         formData.append('toTime', toTime);
         formData.append('title', title);

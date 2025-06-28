@@ -30,15 +30,20 @@ const workshopSchema = new Schema({
   conducted: String,
   title: String,
   duration: String,
+  fromDate: Date,
+  toDate: Date,
   files: [fileSchema], // Array of fileSchema for multiple files
   poster: fileSchema, // Single fileSchema for the poster
   status: {
     type: String,
     default: "Pending"
   },
+  coordinatorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   empId:String,
-  empName:String
+  empName:String,
+  cordName: String,
+  coordId:String
 });
 
 const scholarSchema = new Schema({
@@ -142,6 +147,7 @@ const expertLecturesSchema= new Schema({
 
 const MOOCSchema = new Schema({
   conducted: String,
+  title:String,
   details: fileSchema,
   status: {
     type: String,
@@ -602,7 +608,7 @@ app.post('/upload-workshop-files', authenticateToken, uploadWorkshopFiles.fields
   const userId = req.user.id;
   const files = req.files.files || [];
   const poster = req.files.poster ? req.files.poster[0] : null;
-  const {title, duration, hasCoordinator, coordinatorId } = req.body;
+  const {title, duration, hasCoordinator, coordinatorId , fromDate, toDate} = req.body;
 
   try {
     const user = await User.findById(userId);
@@ -631,6 +637,8 @@ app.post('/upload-workshop-files', authenticateToken, uploadWorkshopFiles.fields
       conducted:'Workshop',
       title,
       duration,
+      fromDate,
+      toDate,
       files: workshopFiles,
       poster: workshopPoster,
       coordinatorId: coordinator ? coordinator._id : null,
@@ -989,7 +997,7 @@ app.post('/upload-extra-class-details', authenticateToken, upload.none(), async 
 app.post('/upload-MOOC-details', authenticateToken, uploadResearchFiles.fields([{name:'details'}]),async(req,res) => {
   const userId = req.user.id;
   const details = req.files.details ? req.files.details[0] : null;
-  const { hasCoordinator, coordinatorId } = req.body;
+  const { hasCoordinator, coordinatorId, title } = req.body;
 
 
   try {
@@ -1007,6 +1015,7 @@ app.post('/upload-MOOC-details', authenticateToken, uploadResearchFiles.fields([
 
     const lectureDetails = details ? {
       conducted:'MOOC',
+      title,
       details,
       status: 'Pending',
       coordinator: coordinator ? coordinator._id : null,

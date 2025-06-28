@@ -20,6 +20,12 @@ import RequestsDisplay from './home/RequestsDisplay';
 import Submissions from './home/Submissions'
 
 
+import Training from './components/Acedemic/Training';
+import Workshop from './components/Acedemic/Workshop';
+import Hackathon from './components/Acedemic/Hackathon';
+import IndistrialExpertLecture from './components/Acedemic/IndustrialExpertLecture';
+
+
 function App() {
   return (
     <UserProvider>
@@ -34,7 +40,14 @@ function App() {
             <Route path="/forgotpassword" element={<ForgotPassword/>} />
             <Route path="/home" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route path="" element={<ProfilePage />} />
-              <Route path="academic" element={<Academic />} />
+              <Route path="academic" element={<Academic />} >
+
+                  <Route path="training" element={<Training />} />
+                  <Route path="workshop" element={<Workshop />} />
+                  <Route path="hackathon" element={<Hackathon />} />
+                  <Route path="indistrialExpertLecture" element={<IndistrialExpertLecture />} />
+                  {/* Add other Routes similarly */}
+              </Route>
               <Route path="profile" element={<Homepage />} />
               <Route path="research" element={<Research />} />
               <Route path="performance" element={<Performance />} />
