@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
-import axios from 'axios';
 import UserContext from '../../UserContext'; // Adjust the path to where your UserContext is defined
 import Swal from 'sweetalert2';
+import api from '../../api';
 
 function ExtraClass() {
   const [isExtraClass, setIsExtraClass] = useState(true);
@@ -39,7 +39,7 @@ function ExtraClass() {
         formData.append('title', title);
   
         try {
-          const response = await axios.post('/upload-extra-class-details', formData, {
+          const response = await api.post('/upload-extra-class-details', formData, {
             headers: {
               Authorization: `Bearer ${localStorage.getItem('token')}`,
               'Content-Type': 'multipart/form-data',

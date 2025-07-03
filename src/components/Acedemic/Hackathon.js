@@ -2,6 +2,7 @@ import React, { useState, useContext, useRef } from 'react';
 import axios from 'axios';
 import UserContext from '../../UserContext';  
 import Swal from 'sweetalert2';
+import api from '../../api';
 
 function Hackathon() {
   const [isConducted, setIsConducted] = useState(true);
@@ -28,7 +29,7 @@ function Hackathon() {
     setCoordinatorId(e.target.value);
     if (e.target.value) {
       try {
-        const response = await axios.get(`/get-employee-name/${e.target.value}`);
+        const response = await api.get(`/get-employee-name/${e.target.value}`);
         if (response.status === 200) {
           setCoordinatorName(response.data.name);
         } else {
@@ -97,7 +98,7 @@ function Hackathon() {
         if (report) formData.append('report', report);
 
         try {
-          const response = await axios.post('/upload-hackathon-details', formData, {
+          const response = await api.post('/upload-hackathon-details', formData, {
             headers: {
               Authorization: `Bearer ${localStorage.getItem('token')}`,
               'Content-Type': 'multipart/form-data',

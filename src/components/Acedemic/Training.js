@@ -1,5 +1,5 @@
 import React, { useState, useContext, useRef } from 'react';
-import axios from 'axios';
+import api from '../../api';
 import UserContext from '../../UserContext'; // Adjust the path to where your UserContext is defined
 import Swal from 'sweetalert2';
 
@@ -74,8 +74,7 @@ function Training({ onTrainingComplete }) {
             throw new Error('Please fill in all details');
           }
       
-          // Make the Axios request after validation passes
-          const response = await axios.post('/upload-training-details', formData, {
+          const response = await api.post('/upload-training-details', formData, {
             headers: {
               Authorization: `Bearer ${localStorage.getItem('token')}`,
               'Content-Type': 'multipart/form-data'

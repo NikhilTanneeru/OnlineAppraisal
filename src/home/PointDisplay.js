@@ -3,6 +3,8 @@ import UserContext from '../UserContext';
 import Swal from 'sweetalert2';
 import Submissions from '../home/Submissions';
 import RejectionsDisplay from './RejectionsDisplay';
+import api from '../api'; // add this at the top if not already
+
 
 function PointDisplay() {
   const { user } = useContext(UserContext); 
@@ -11,18 +13,11 @@ function PointDisplay() {
 
   const fetchPointsData = async () => {
     try {
-      const response = await fetch('/get-user-points', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      const response = await api.get('/get-user-points'); // Axios response
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText);
-      }
+      // Axios automatically parses JSON, so just use:
+      const data = response.data;
 
-      const data = await response.json();
       setTotalPoints(data.totalPoints);
       setPointsLog(data.pointsLog);
     } catch (error) {
@@ -30,6 +25,7 @@ function PointDisplay() {
       Swal.fire('Error', 'Failed to fetch points data', 'error');
     }
   };
+
 
   useEffect(() => {
     fetchPointsData();
